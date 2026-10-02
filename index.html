@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Churn Analytics & Retention Dashboard</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0b1120;
+      --bg-card: #151e32;
+      --bg-card-hover: #1e293b;
+      --accent-blue: #38bdf8;
+      --accent-red: #f87171;
+      --accent-green: #4ade80;
+      --accent-purple: #c084fc;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-titles h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-titles p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .badge {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: #334155;
+    }
+
+    .kpi-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .val-red { color: var(--accent-red); }
+    .val-green { color: var(--accent-green); }
+    .val-blue { color: var(--accent-blue); }
+    .val-purple { color: var(--accent-purple); }
+
+    /* Main Section */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+    }
+
+    /* Strategy List */
+    .strategy-item {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .strategy-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .strategy-content h4 {
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .strategy-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Row 3 Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="header-titles">
+      <h1>📊 Customer Churn Analytics Dashboard</h1>
+      <p>Subscription Lifecycle & Churn Diagnosis Pipeline | Lead Analyst: Indrajit Mandal</p>
+    </div>
+    <div class="badge">SQLite & Python BI Engine</div>
+  </header>
+
+  <!-- KPI Metric Cards -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-title">Overall Churn Rate</div>
+      <div class="kpi-value val-red">28.57%</div>
+      <div class="kpi-sub">6 Cancellations / 21 Users</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Retention Rate</div>
+      <div class="kpi-value val-green">71.43%</div>
+      <div class="kpi-sub">Active Subscriber Baseline</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Revenue at Risk</div>
+      <div class="kpi-value val-red">$73.94k</div>
+      <div class="kpi-sub">Monthly Churned Revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">ARPU</div>
+      <div class="kpi-value val-blue">$18.85</div>
+      <div class="kpi-sub">Avg Monthly Spend / User</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Support Escalation</div>
+      <div class="kpi-value val-purple">19.05%</div>
+      <div class="kpi-sub">Corr w/ Churn: r = 0.77</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Avg Tenure</div>
+      <div class="kpi-value val-blue">1,518 D</div>
+      <div class="kpi-sub">~4.1 Years Active Lifecycle</div>
+    </div>
+  </section>
+
+  <!-- Mid Section: Monthly Trend + Interventions -->
+  <div class="grid-2">
+    <!-- Chart: Monthly Trend -->
+    <div class="card">
+      <div class="card-title">
+        <span>Monthly Churn Trend (2024)</span>
+        <span class="card-subtitle">Peak Spike in September</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Strategic Interventions -->
+    <div class="card">
+      <div class="card-title">Strategic Interventions</div>
+      
+      <div class="strategy-item">
+        <div class="strategy-num">1</div>
+        <div class="strategy-content">
+          <h4>Proactive Escalation Resolution</h4>
+          <p>Early-intervention SLA for accounts with ticket escalations (r=0.77 correlation with immediate churn).</p>
+        </div>
+      </div>
+
+      <div class="strategy-item">
+        <div class="strategy-num">2</div>
+        <div class="strategy-content">
+          <h4>Basic Plan Value Restructuring</h4>
+          <p>Overhaul onboarding & feature limits on Basic Plan where churn reaches an alarming 60.0%.</p>
+        </div>
+      </div>
+
+      <div class="strategy-item">
+        <div class="strategy-num">3</div>
+        <div class="strategy-content">
+          <h4>Annual Contract Incentivization</h4>
+          <p>Long-term contracts reduce attrition (r=-0.52). Provide upfront discounts to shift monthly users.</p>
+        </div>
+      </div>
+
+      <div class="strategy-item">
+        <div class="strategy-num">4</div>
+        <div class="strategy-content">
+          <h4>Referral Channel Quality Audit</h4>
+          <p>Fix onboarding mismatch as referral acquisition exhibits a critical 83.33% attrition rate.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Section: Granular Charts -->
+  <div class="grid-3">
+    <!-- Plan Churn -->
+    <div class="card">
+      <div class="card-title">Churn Rate by Plan Tier</div>
+      <div class="chart-container">
+        <canvas id="planChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Acquisition Channel -->
+    <div class="card">
+      <div class="card-title">Acquisition Channel Churn (%)</div>
+      <div class="chart-container">
+        <canvas id="channelChart"></canvas>
+      </div>
+    </div>
+
+    <!-- State Revenue Distribution -->
+    <div class="card">
+      <div class="card-title">Top Regional Revenue (INR 'k')</div>
+      <div class="chart-container">
+        <canvas id="stateChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Chart Colors & Defaults
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = '#1e293b';
+
+  // 1. Monthly Churn Trend
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: ['2024-02', '2024-05', '2024-09', '2024-10', '2024-11'],
+      datasets: [{
+        label: 'Churned Customers',
+        data: [1, 1, 2, 1, 1],
+        borderColor: '#4ade80',
+        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+        tension: 0.3,
+        borderWidth: 3,
+        fill: true,
+        pointRadius: 6,
+        pointHoverRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+
+  // 2. Churn by Plan
+  new Chart(document.getElementById('planChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Basic', 'Standard', 'Premium'],
+      datasets: [{
+        data: [60.0, 22.22, 14.29],
+        backgroundColor: ['#f87171', '#38bdf8', '#4ade80'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => v + '%' }, max: 80 }
+      }
+    }
+  });
+
+  // 3. Acquisition Channel
+  new Chart(document.getElementById('channelChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Referral', 'Paid', 'Organic'],
+      datasets: [{
+        data: [83.33, 16.67, 0.0],
+        backgroundColor: ['#f87171', '#fbbf24', '#4ade80'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => v + '%' }, max: 100 }
+      }
+    }
+  });
+
+  // 4. Regional Revenue
+  new Chart(document.getElementById('stateChart'), {
+    type: 'bar',
+    data: {
+      labels: ['UP', 'Delhi', 'Maharashtra', 'Meghalaya', 'Rajasthan', 'Telangana'],
+      datasets: [{
+        data: [115.98, 52.96, 50.97, 42.97, 36.98, 30.98],
+        backgroundColor: '#38bdf8',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => '$' + v } }
+      }
+    }
+  });
+</script>
+</body>
+</html>
